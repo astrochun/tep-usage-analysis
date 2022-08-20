@@ -1,0 +1,42 @@
+[project]
+name = "tep-usage-analysis"
+description = "Tucson Electric Power usage"
+authors = [
+    {name = "Chun Ly", email="astro.chun@gmail.com"}
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+dynamic = ["version"]
+
+keywords = ["energy-usage", "data-science", "data-visualization"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+]
+
+dependencies = [
+    "black",
+    "pandas>=1.4.3,<2.0.0",
+    "rich",
+]
+
+[project.urls]
+homepage = "https://github.com/astrochun/tep-usage-analysis"
+documentation = "https://github.com/astrochun/tep-usage-analysis"
+repository = "https://github.com/astrochun/tep-usage-analysis"
+
+[build-system]
+requires = ["setuptools>=61.1.0", "wheel", "Cython", "numpy>=1.21.1,<2.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 79
+target-version = ['py310']
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tep_usage_analysis*"]
+namespaces = false
