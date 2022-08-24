@@ -17,6 +17,13 @@ TOU_OFF_RATES = {
     "winter": tier_dict(0.1050, 0.1163, 0.1226),
 }
 
+PEAK_DEMAND_RATES = {
+    "summer": 0.0711,
+    "winter": 0.0681,
+    "<=7": 10.18,
+    ">7": 14.79,
+}
+
 
 def basic(input_df: pd.DataFrame):
     """Compute usage based on Basic plan"""
@@ -48,6 +55,37 @@ def basic(input_df: pd.DataFrame):
 def df_sum(i_df: pd.DataFrame):
     """Total usage in kWh"""
     return i_df["USAGE"].sum()
+
+
+def peak_demand(input_df: pd.DataFrame):
+    """Compute usage based on Peak Demand plan"""
+
+    total_usage = df_sum(input_df)
+    print(f"Total usage: {total_usage} kWh")
+
+    month = pd.DatetimeIndex(input_df["DATE"]).month
+    start_hour = pd.DatetimeIndex(
+        pd.to_datetime(input_df["START TIME"], format="%H:%M")
+    ).hour
+
+    summer_index = (month <= 9) & (month >= 5)
+    peak_index = (start_hour >= 3) & (start_hour <= 6)
+
+    summer_df = input_df[summer_index]
+    winter_df = input_df[~summer_index]
+
+    print(peak_sum(summer_df, "summer"))
+    print(peak_sum(winter_df, "winter"))
+    demand = input_df[peak_index]["USAGE"].max()
+    demand_charge = demand * (
+        PEAK_DEMAND_RATES["<=7"] if demand <= 7 else PEAK_DEMAND_RATES[">7"])
+    print(demand, demand_charge)
+
+
+def peak_sum(t_df: pd.DataFrame, period: str):
+    _total = df_sum(t_df)
+    peak_usage = _total * PEAK_DEMAND_RATES[period]
+    return peak_usage
 
 
 def tier_sum(t_df: pd.DataFrame, rates: dict, period: str) -> list:
