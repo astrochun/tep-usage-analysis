@@ -29,8 +29,18 @@ def basic(input_df: pd.DataFrame):
     summer_df = input_df[summer_index]
     winter_df = input_df[~summer_index]
 
-    usage = tier_sum(summer_df, BASIC_RATES, "summer")
-    usage += tier_sum(winter_df, BASIC_RATES, "winter")
+    summer_tier = tier_sum(summer_df, BASIC_RATES, "summer")
+    winter_tier = tier_sum(winter_df, BASIC_RATES, "winter")
+
+    usage = sum(summer_tier + winter_tier)
+
+    print(
+        f"Tier         | Summer  | Winter  |\n"
+        f"-------------|---------|---------|\n"
+        f"<=500 kWh    | ${summer_tier[0]:6.2f} | ${winter_tier[0]:6.2f} |\n"
+        f"500-1000 kWh | ${summer_tier[1]:6.2f} | ${winter_tier[1]:6.2f} |\n"
+        f">1000 kWh    | ${summer_tier[2]:6.2f} | ${winter_tier[2]:6.2f} |\n"
+    )
 
     print(f"Estimate cost with Basic plan: ${usage:6.2f}")
 
@@ -40,16 +50,16 @@ def df_sum(i_df: pd.DataFrame):
     return i_df["USAGE"].sum()
 
 
-def tier_sum(t_df: pd.DataFrame, rates: dict, period: str):
+def tier_sum(t_df: pd.DataFrame, rates: dict, period: str) -> list:
     """Compute sum for summer/winter month using 3-level tiers"""
     _total = df_sum(t_df)
 
-    _usage = min([_total, 500]) * rates[period]["<=500"]
+    tier_usage = [min([_total, 500]) * rates[period]["<=500"], 0, 0]
     if _total >= 500:
-        _usage += min([_total-500, 500]) * rates[period]["500-1000"]
+        tier_usage[1] = min([_total-500, 500]) * rates[period]["500-1000"]
     if _total >= 1000:
-        _usage += (_total-1000) * rates[period][">1000"]
-    return _usage
+        tier_usage[2] = (_total-1000) * rates[period][">1000"]
+    return tier_usage
 
 
 def tou(input_df: pd.DataFrame):
@@ -72,21 +82,21 @@ def tou(input_df: pd.DataFrame):
     winter_on_df = input_df[(~summer_index) & peak_index]
     winter_off_df = input_df[(~summer_index) & (~peak_index)]
 
-    s_on = tier_sum(summer_on_df, TOU_ON_RATES, "summer")
-    s_off = tier_sum(summer_off_df, TOU_OFF_RATES, "summer")
-    w_on = tier_sum(winter_on_df, TOU_ON_RATES, "winter")
-    w_off = tier_sum(winter_off_df, TOU_OFF_RATES, "winter")
+    s_on_tier = tier_sum(summer_on_df, TOU_ON_RATES, "summer")
+    s_off_tier = tier_sum(summer_off_df, TOU_OFF_RATES, "summer")
+    w_on_tier = tier_sum(winter_on_df, TOU_ON_RATES, "winter")
+    w_off_tier = tier_sum(winter_off_df, TOU_OFF_RATES, "winter")
 
     print(
         f"Summer peak: {df_sum(summer_on_df):7.2f} kWh "
-        f"({len(summer_on_df):3} hrs)  ${s_on:6.2f}\n"
+        f"({len(summer_on_df):3} hrs)  ${sum(s_on_tier):6.2f}\n"
         f"Summer off:  {df_sum(summer_off_df):7.2f} kWh "
-        f"({len(summer_off_df):3} hrs)  ${s_off:6.2f}\n"
+        f"({len(summer_off_df):3} hrs)  ${sum(s_off_tier):6.2f}\n"
         f"Winter peak: {df_sum(winter_on_df):7.2f} kWh "
-        f"({len(winter_on_df):3} hrs)  ${w_on:6.2f}\n"
+        f"({len(winter_on_df):3} hrs)  ${sum(w_on_tier):6.2f}\n"
         f"Winter off:  {df_sum(winter_off_df):7.2f} kWh "
-        f"({len(winter_off_df):3} hrs)  ${w_off:6.2f}\n"
+        f"({len(winter_off_df):3} hrs)  ${sum(w_off_tier):6.2f}\n"
     )
 
-    usage = s_on + s_off + w_on + w_off
+    usage = sum(s_on_tier + s_off_tier + w_on_tier + w_off_tier)
     print(f"Estimate cost with TOU plan: ${usage:6.2f}")
