@@ -31,7 +31,7 @@ TOU_OFF_RATES = {
 CALENDAR = USFederalHolidayCalendar()
 
 
-def basic(input_df: pd.DataFrame):
+def basic(input_df: pd.DataFrame) -> float:
     """Compute usage based on Basic plan"""
 
     arrays = dict_commons(input_df)
@@ -50,6 +50,8 @@ def basic(input_df: pd.DataFrame):
     )
 
     print(f"Estimate cost with Basic plan: ${usage:6.2f}")
+
+    return usage
 
 
 def dict_commons(input_df: pd.DataFrame) -> dict:
@@ -103,7 +105,7 @@ def get_weekdays(input_df: pd.DataFrame):
     return pd.DatetimeIndex(input_df["DATE"]).weekday < 4
 
 
-def peak_demand(input_df: pd.DataFrame):
+def peak_demand(input_df: pd.DataFrame) -> float:
     """Compute usage based on Peak Demand plan"""
 
     arrays = dict_commons(input_df)
@@ -125,6 +127,8 @@ def peak_demand(input_df: pd.DataFrame):
     usage = summer_energy_charge + winter_energy_charge + demand_charge
     print(f"Estimate cost with Peak Demand plan: ${usage:6.2f}")
 
+    return usage
+
 
 def peak_sum(t_df: pd.DataFrame, period: str):
     _total = df_sum(t_df)
@@ -144,7 +148,7 @@ def tier_sum(t_df: pd.DataFrame, rates: dict, period: str) -> list:
     return tier_usage
 
 
-def tou(input_df: pd.DataFrame):
+def tou(input_df: pd.DataFrame) -> float:
     """Compute usage based on Time-of-Use (TOU) plan"""
 
     arrays = dict_commons(input_df)
@@ -181,3 +185,4 @@ def tou(input_df: pd.DataFrame):
 
     usage = sum(s_on_tier + s_off_tier + w_on_tier + w_off_tier)
     print(f"Estimate cost with TOU plan: ${usage:6.2f}")
+    return usage
