@@ -2,9 +2,17 @@ import pandas as pd
 from rich import print
 
 from .commons import tier_dict
+
 BASIC_RATES = {
     "summer": tier_dict(0.1081, 0.1254, 0.1317),
     "winter": tier_dict(0.1052, 0.1224, 0.1287),
+}
+
+PEAK_DEMAND_RATES = {
+    "summer": 0.0711,
+    "winter": 0.0681,
+    "<=7": 10.18,
+    ">7": 14.79,
 }
 
 TOU_ON_RATES = {
@@ -15,13 +23,6 @@ TOU_ON_RATES = {
 TOU_OFF_RATES = {
     "summer": tier_dict(0.1056, 0.1169, 0.1232),
     "winter": tier_dict(0.1050, 0.1163, 0.1226),
-}
-
-PEAK_DEMAND_RATES = {
-    "summer": 0.0711,
-    "winter": 0.0681,
-    "<=7": 10.18,
-    ">7": 14.79,
 }
 
 
