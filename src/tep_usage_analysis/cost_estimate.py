@@ -1,4 +1,7 @@
+from datetime import datetime
+
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
 from rich import print
 
 from .commons import tier_dict
@@ -24,6 +27,8 @@ TOU_OFF_RATES = {
     "summer": tier_dict(0.1056, 0.1169, 0.1232),
     "winter": tier_dict(0.1050, 0.1163, 0.1226),
 }
+
+CALENDAR = USFederalHolidayCalendar()
 
 
 def basic(input_df: pd.DataFrame):
@@ -60,8 +65,8 @@ def dict_commons(input_df: pd.DataFrame) -> dict:
 
     summer_index = (month <= 9) & (month >= 5)
     weekdays = get_weekdays(input_df)
-    peak_index = (start_hour >= 3) & (start_hour <= 6) & weekdays
-
+    holidays = get_holidays(input_df)
+    peak_index = (start_hour >= 3) & (start_hour <= 6) & weekdays & (~holidays)
     summer_df = input_df[summer_index]
     winter_df = input_df[~summer_index]
 
@@ -78,6 +83,17 @@ def dict_commons(input_df: pd.DataFrame) -> dict:
 def df_sum(i_df: pd.DataFrame):
     """Total usage in kWh"""
     return i_df["USAGE"].sum()
+
+
+def get_holidays(input_df: pd.DataFrame):
+    """Get holidays and adjust weekend if holiday fell on a weekend"""
+    min_year = input_df["DATE"].min().year
+    max_year = input_df["DATE"].max().year
+
+    holidays = CALENDAR.holidays(
+        datetime(min_year, 1, 1), datetime(max_year, 12, 31)
+    )
+    return input_df["DATE"].isin(holidays).values
 
 
 def get_weekdays(input_df: pd.DataFrame):
