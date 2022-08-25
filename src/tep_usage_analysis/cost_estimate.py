@@ -66,7 +66,8 @@ def dict_commons(input_df: pd.DataFrame) -> dict:
     summer_index = (month <= 9) & (month >= 5)
     weekdays = get_weekdays(input_df)
     holidays = get_holidays(input_df)
-    peak_index = (start_hour >= 15) & (start_hour <= 18) & weekdays & (~holidays)
+    peak_summer_index = (start_hour >= 15) & (start_hour <= 18) & weekdays & (~holidays)
+    peak_winter_index = (((start_hour >= 6) & (start_hour <= 8)) | (start_hour >= 18) & (start_hour <= 20)) & weekdays & (~holidays)
     summer_df = input_df[summer_index]
     winter_df = input_df[~summer_index]
 
@@ -74,7 +75,8 @@ def dict_commons(input_df: pd.DataFrame) -> dict:
         "total_usage": total_usage,
         "month": month,
         "summer_index": summer_index,
-        "peak_index": peak_index,
+        "peak_summer_index": peak_summer_index,
+        "peak_winter_index": peak_winter_index,
         "summer_df": summer_df,
         "winter_df": winter_df
     }
@@ -137,11 +139,19 @@ def tou(input_df: pd.DataFrame):
 
     arrays = dict_commons(input_df)
 
-    summer_on_df = input_df[arrays["summer_index"] & arrays["peak_index"]]
-    summer_off_df = input_df[arrays["summer_index"] & (~arrays["peak_index"])]
+    summer_on_df = input_df[
+        arrays["summer_index"] & arrays["peak_summer_index"]
+    ]
+    summer_off_df = input_df[
+        arrays["summer_index"] & (~arrays["peak_summer_index"])
+    ]
 
-    winter_on_df = input_df[(~arrays["summer_index"]) & arrays["peak_index"]]
-    winter_off_df = input_df[(~arrays["summer_index"]) & (~arrays["peak_index"])]
+    winter_on_df = input_df[
+        (~arrays["summer_index"]) & arrays["peak_winter_index"]
+    ]
+    winter_off_df = input_df[
+        (~arrays["summer_index"]) & (~arrays["peak_winter_index"])
+    ]
 
     s_on_tier = tier_sum(summer_on_df, TOU_ON_RATES, "summer")
     s_off_tier = tier_sum(summer_off_df, TOU_OFF_RATES, "summer")
