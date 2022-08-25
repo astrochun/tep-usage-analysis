@@ -57,6 +57,11 @@ def df_sum(i_df: pd.DataFrame):
     return i_df["USAGE"].sum()
 
 
+def get_weekdays(input_df: pd.DataFrame):
+    """Obtain weekday records"""
+    return pd.DatetimeIndex(input_df["DATE"]).weekday < 4
+
+
 def peak_demand(input_df: pd.DataFrame):
     """Compute usage based on Peak Demand plan"""
 
@@ -69,7 +74,8 @@ def peak_demand(input_df: pd.DataFrame):
     ).hour
 
     summer_index = (month <= 9) & (month >= 5)
-    peak_index = (start_hour >= 3) & (start_hour <= 6)
+    weekdays = get_weekdays(input_df)
+    peak_index = (start_hour >= 3) & (start_hour <= 6) & weekdays
 
     summer_df = input_df[summer_index]
     winter_df = input_df[~summer_index]
@@ -112,7 +118,8 @@ def tou(input_df: pd.DataFrame):
     ).hour
 
     summer_index = (month <= 9) & (month >= 5)
-    peak_index = (start_hour >= 3) & (start_hour <= 6)
+    weekdays = get_weekdays(input_df)
+    peak_index = (start_hour >= 3) & (start_hour <= 6) & weekdays
 
     summer_on_df = input_df[summer_index & peak_index]
     summer_off_df = input_df[summer_index & (~peak_index)]
