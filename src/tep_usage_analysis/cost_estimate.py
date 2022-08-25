@@ -66,7 +66,7 @@ def dict_commons(input_df: pd.DataFrame) -> dict:
     summer_index = (month <= 9) & (month >= 5)
     weekdays = get_weekdays(input_df)
     holidays = get_holidays(input_df)
-    peak_index = (start_hour >= 3) & (start_hour <= 6) & weekdays & (~holidays)
+    peak_index = (start_hour >= 15) & (start_hour <= 18) & weekdays & (~holidays)
     summer_df = input_df[summer_index]
     winter_df = input_df[~summer_index]
 
