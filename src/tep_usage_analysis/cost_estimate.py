@@ -29,16 +29,10 @@ TOU_OFF_RATES = {
 def basic(input_df: pd.DataFrame):
     """Compute usage based on Basic plan"""
 
-    total_usage = df_sum(input_df)
-    print(f"Total usage: {total_usage} kWh")
+    arrays = dict_commons(input_df)
 
-    month = pd.DatetimeIndex(input_df["DATE"]).month
-    summer_index = (month <= 9) & (month >= 5)
-    summer_df = input_df[summer_index]
-    winter_df = input_df[~summer_index]
-
-    summer_tier = tier_sum(summer_df, BASIC_RATES, "summer")
-    winter_tier = tier_sum(winter_df, BASIC_RATES, "winter")
+    summer_tier = tier_sum(arrays["summer_df"], BASIC_RATES, "summer")
+    winter_tier = tier_sum(arrays["winter_df"], BASIC_RATES, "winter")
 
     usage = sum(summer_tier + winter_tier)
 
@@ -53,18 +47,8 @@ def basic(input_df: pd.DataFrame):
     print(f"Estimate cost with Basic plan: ${usage:6.2f}")
 
 
-def df_sum(i_df: pd.DataFrame):
-    """Total usage in kWh"""
-    return i_df["USAGE"].sum()
-
-
-def get_weekdays(input_df: pd.DataFrame):
-    """Obtain weekday records"""
-    return pd.DatetimeIndex(input_df["DATE"]).weekday < 4
-
-
-def peak_demand(input_df: pd.DataFrame):
-    """Compute usage based on Peak Demand plan"""
+def dict_commons(input_df: pd.DataFrame) -> dict:
+    """Provide common arrays for all plans"""
 
     total_usage = df_sum(input_df)
     print(f"Total usage: {total_usage} kWh")
@@ -81,9 +65,34 @@ def peak_demand(input_df: pd.DataFrame):
     summer_df = input_df[summer_index]
     winter_df = input_df[~summer_index]
 
-    print(peak_sum(summer_df, "summer"))
-    print(peak_sum(winter_df, "winter"))
-    demand = input_df[peak_index]["USAGE"].max()
+    return {
+        "total_usage": total_usage,
+        "month": month,
+        "summer_index": summer_index,
+        "peak_index": peak_index,
+        "summer_df": summer_df,
+        "winter_df": winter_df
+    }
+
+
+def df_sum(i_df: pd.DataFrame):
+    """Total usage in kWh"""
+    return i_df["USAGE"].sum()
+
+
+def get_weekdays(input_df: pd.DataFrame):
+    """Obtain weekday records"""
+    return pd.DatetimeIndex(input_df["DATE"]).weekday < 4
+
+
+def peak_demand(input_df: pd.DataFrame):
+    """Compute usage based on Peak Demand plan"""
+
+    arrays = dict_commons(input_df)
+
+    print(peak_sum(arrays["summer_df"], "summer"))
+    print(peak_sum(arrays["winter_df"], "winter"))
+    demand = input_df[arrays["peak_index"]]["USAGE"].max()
     demand_charge = demand * (
         PEAK_DEMAND_RATES["<=7"] if demand <= 7 else PEAK_DEMAND_RATES[">7"])
     print(demand, demand_charge)
@@ -110,23 +119,13 @@ def tier_sum(t_df: pd.DataFrame, rates: dict, period: str) -> list:
 def tou(input_df: pd.DataFrame):
     """Compute usage based on Time-of-Use (TOU) plan"""
 
-    total_usage = df_sum(input_df)
-    print(f"Total usage: {total_usage} kWh")
+    arrays = dict_commons(input_df)
 
-    month = pd.DatetimeIndex(input_df["DATE"]).month
-    start_hour = pd.DatetimeIndex(
-        pd.to_datetime(input_df["START TIME"], format="%H:%M")
-    ).hour
+    summer_on_df = input_df[arrays["summer_index"] & arrays["peak_index"]]
+    summer_off_df = input_df[arrays["summer_index"] & (~arrays["peak_index"])]
 
-    summer_index = (month <= 9) & (month >= 5)
-    weekdays = get_weekdays(input_df)
-    peak_index = (start_hour >= 3) & (start_hour <= 6) & weekdays
-
-    summer_on_df = input_df[summer_index & peak_index]
-    summer_off_df = input_df[summer_index & (~peak_index)]
-
-    winter_on_df = input_df[(~summer_index) & peak_index]
-    winter_off_df = input_df[(~summer_index) & (~peak_index)]
+    winter_on_df = input_df[(~arrays["summer_index"]) & arrays["peak_index"]]
+    winter_off_df = input_df[(~arrays["summer_index"]) & (~arrays["peak_index"])]
 
     s_on_tier = tier_sum(summer_on_df, TOU_ON_RATES, "summer")
     s_off_tier = tier_sum(summer_off_df, TOU_OFF_RATES, "summer")
