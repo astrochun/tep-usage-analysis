@@ -108,12 +108,22 @@ def peak_demand(input_df: pd.DataFrame):
 
     arrays = dict_commons(input_df)
 
-    print(peak_sum(arrays["summer_df"], "summer"))
-    print(peak_sum(arrays["winter_df"], "winter"))
-    demand = input_df[arrays["peak_index"]]["USAGE"].max()
+    summer_energy_charge = peak_sum(arrays["summer_df"], "summer")
+    winter_energy_charge = peak_sum(arrays["winter_df"], "winter")
+    demand = input_df[
+        arrays["peak_summer_index"] | arrays["peak_winter_index"]
+    ]["USAGE"].max()
     demand_charge = demand * (
         PEAK_DEMAND_RATES["<=7"] if demand <= 7 else PEAK_DEMAND_RATES[">7"])
-    print(demand, demand_charge)
+
+    print(
+        f"Summer Energy Charge: ${summer_energy_charge:6.2f}\n"
+        f"Winter Energy Charge: ${winter_energy_charge:6.2f}\n"
+        f"Peak demand: {demand} kW\n"
+    )
+
+    usage = summer_energy_charge + winter_energy_charge + demand_charge
+    print(f"Estimate cost with Peak Demand plan: ${usage:6.2f}")
 
 
 def peak_sum(t_df: pd.DataFrame, period: str):
