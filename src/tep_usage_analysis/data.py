@@ -38,3 +38,28 @@ def load(infile: str | Path) -> pd.DataFrame:
     df["START TIME"] = _to_24(df["START TIME"])
     df["END TIME"] = _to_24(df["END TIME"])
     return df
+
+
+def separate_billing_cycle(
+    input_df: pd.DataFrame, billing_start_date: list[str]
+) -> dict[str, pd.DataFrame]:
+    """Separate out multiple billing cycles"""
+
+    billing_start_datetime = [
+        datetime.strptime(d, "%m/%d/%Y") for d in billing_start_date
+    ]
+
+    dict_df = dict()
+    for i, bill_date in enumerate(billing_start_datetime):
+        if i == len(billing_start_datetime)-1:
+            bill_end_date = input_df["DATE"].max()
+        else:
+            bill_end_date = billing_start_datetime[i+1]
+        bill_df = input_df[
+            (input_df["DATE"] >= bill_date) &
+            (input_df["DATE"] < bill_end_date)
+        ]
+        if not bill_df.empty:
+            dict_df[billing_start_date[i]] = bill_df
+
+    return dict_df
