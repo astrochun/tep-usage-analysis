@@ -23,6 +23,9 @@ dependencies = [
     "rich",
 ]
 
+[project.scripts]
+tep_cost_estimate = "tep_usage_analysis.main:tep_cost_estimate"
+
 [project.urls]
 homepage = "https://github.com/astrochun/tep-usage-analysis"
 documentation = "https://github.com/astrochun/tep-usage-analysis"
