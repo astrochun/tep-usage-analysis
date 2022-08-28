@@ -65,6 +65,7 @@ def separate_billing_cycle(
             (input_df["DATE"] < bill_end_date)
         ]
         if not bill_df.empty:
-            dict_df[billing_start_date[i]] = bill_df
+            t_key = f"{billing_start_date[i]} - {bill_end_date:%m/%d/%Y}"
+            dict_df[t_key] = bill_df
 
     return dict_df

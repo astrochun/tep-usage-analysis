@@ -31,34 +31,37 @@ TOU_OFF_RATES = {
 CALENDAR = USFederalHolidayCalendar()
 
 
-def basic(input_df: pd.DataFrame) -> float:
+def basic(input_df: pd.DataFrame, silent: bool = False) -> float:
     """Compute usage based on Basic plan"""
 
-    arrays = dict_commons(input_df)
+    arrays = dict_commons(input_df, silent=silent)
 
     summer_tier = tier_sum(arrays["summer_df"], BASIC_RATES, "summer")
     winter_tier = tier_sum(arrays["winter_df"], BASIC_RATES, "winter")
 
     usage = sum(summer_tier + winter_tier)
 
-    print(
-        f"Tier         | Summer  | Winter  |\n"
-        f"-------------|---------|---------|\n"
-        f"<=500 kWh    | ${summer_tier[0]:6.2f} | ${winter_tier[0]:6.2f} |\n"
-        f"500-1000 kWh | ${summer_tier[1]:6.2f} | ${winter_tier[1]:6.2f} |\n"
-        f">1000 kWh    | ${summer_tier[2]:6.2f} | ${winter_tier[2]:6.2f} |\n"
-    )
+    if not silent:
+        print(
+            f"Tier         | Summer  | Winter  |\n"
+            f"-------------|---------|---------|\n"
+            f"<=500 kWh    | ${summer_tier[0]:6.2f} | ${winter_tier[0]:6.2f} |\n"
+            f"500-1000 kWh | ${summer_tier[1]:6.2f} | ${winter_tier[1]:6.2f} |\n"
+            f">1000 kWh    | ${summer_tier[2]:6.2f} | ${winter_tier[2]:6.2f} |\n"
+        )
 
-    print(f"Estimate cost with Basic plan: ${usage:6.2f}")
+    if not silent:
+        print(f"Estimate cost with Basic plan: ${usage:6.2f}")
 
     return usage
 
 
-def dict_commons(input_df: pd.DataFrame) -> dict:
+def dict_commons(input_df: pd.DataFrame, silent: bool = False) -> dict:
     """Provide common arrays for all plans"""
 
     total_usage = df_sum(input_df)
-    print(f"Total usage: {total_usage} kWh")
+    if not silent:
+        print(f"Total usage: {total_usage} kWh")
 
     month = pd.DatetimeIndex(input_df["DATE"]).month
     start_hour = pd.DatetimeIndex(
@@ -105,10 +108,10 @@ def get_weekdays(input_df: pd.DataFrame):
     return pd.DatetimeIndex(input_df["DATE"]).weekday < 4
 
 
-def peak_demand(input_df: pd.DataFrame) -> float:
+def peak_demand(input_df: pd.DataFrame, silent: bool = False) -> float:
     """Compute usage based on Peak Demand plan"""
 
-    arrays = dict_commons(input_df)
+    arrays = dict_commons(input_df, silent=silent)
 
     summer_energy_charge = peak_sum(arrays["summer_df"], "summer")
     winter_energy_charge = peak_sum(arrays["winter_df"], "winter")
@@ -118,14 +121,16 @@ def peak_demand(input_df: pd.DataFrame) -> float:
     demand_charge = demand * (
         PEAK_DEMAND_RATES["<=7"] if demand <= 7 else PEAK_DEMAND_RATES[">7"])
 
-    print(
-        f"Summer Energy Charge: ${summer_energy_charge:6.2f}\n"
-        f"Winter Energy Charge: ${winter_energy_charge:6.2f}\n"
-        f"Peak demand: {demand} kW\n"
-    )
+    if not silent:
+        print(
+            f"Summer Energy Charge: ${summer_energy_charge:6.2f}\n"
+            f"Winter Energy Charge: ${winter_energy_charge:6.2f}\n"
+            f"Peak demand: {demand} kW\n"
+        )
 
     usage = summer_energy_charge + winter_energy_charge + demand_charge
-    print(f"Estimate cost with Peak Demand plan: ${usage:6.2f}")
+    if not silent:
+        print(f"Estimate cost with Peak Demand plan: ${usage:6.2f}")
 
     return usage
 
@@ -148,10 +153,10 @@ def tier_sum(t_df: pd.DataFrame, rates: dict, period: str) -> list:
     return tier_usage
 
 
-def tou(input_df: pd.DataFrame) -> float:
+def tou(input_df: pd.DataFrame, silent: bool = False) -> float:
     """Compute usage based on Time-of-Use (TOU) plan"""
 
-    arrays = dict_commons(input_df)
+    arrays = dict_commons(input_df, silent=silent)
 
     summer_on_df = input_df[
         arrays["summer_index"] & arrays["peak_summer_index"]
@@ -172,17 +177,19 @@ def tou(input_df: pd.DataFrame) -> float:
     w_on_tier = tier_sum(winter_on_df, TOU_ON_RATES, "winter")
     w_off_tier = tier_sum(winter_off_df, TOU_OFF_RATES, "winter")
 
-    print(
-        f"Summer peak: {df_sum(summer_on_df):7.2f} kWh "
-        f"({len(summer_on_df):3} hrs)  ${sum(s_on_tier):6.2f}\n"
-        f"Summer off:  {df_sum(summer_off_df):7.2f} kWh "
-        f"({len(summer_off_df):3} hrs)  ${sum(s_off_tier):6.2f}\n"
-        f"Winter peak: {df_sum(winter_on_df):7.2f} kWh "
-        f"({len(winter_on_df):3} hrs)  ${sum(w_on_tier):6.2f}\n"
-        f"Winter off:  {df_sum(winter_off_df):7.2f} kWh "
-        f"({len(winter_off_df):3} hrs)  ${sum(w_off_tier):6.2f}\n"
-    )
+    if not silent:
+        print(
+            f"Summer peak: {df_sum(summer_on_df):7.2f} kWh "
+            f"({len(summer_on_df):3} hrs)  ${sum(s_on_tier):6.2f}\n"
+            f"Summer off:  {df_sum(summer_off_df):7.2f} kWh "
+            f"({len(summer_off_df):3} hrs)  ${sum(s_off_tier):6.2f}\n"
+            f"Winter peak: {df_sum(winter_on_df):7.2f} kWh "
+            f"({len(winter_on_df):3} hrs)  ${sum(w_on_tier):6.2f}\n"
+            f"Winter off:  {df_sum(winter_off_df):7.2f} kWh "
+            f"({len(winter_off_df):3} hrs)  ${sum(w_off_tier):6.2f}\n"
+        )
 
     usage = sum(s_on_tier + s_off_tier + w_on_tier + w_off_tier)
-    print(f"Estimate cost with TOU plan: ${usage:6.2f}")
+    if not silent:
+        print(f"Estimate cost with TOU plan: ${usage:6.2f}")
     return usage
